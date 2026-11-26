@@ -200,7 +200,9 @@ data class ConversationSessionInfo(
     val initialStaticReplySent: Boolean,
     val autoCallTriggered: Boolean,
     val lastMessagePreview: String,
-    val lastUpdatedMillis: Long
+    val lastUpdatedMillis: Long,
+    val openingMessagePreview: String = "",
+    val contextTurnCount: Int = 0
 )
 
 data class CallRequest(

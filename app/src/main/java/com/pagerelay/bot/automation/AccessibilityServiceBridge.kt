@@ -1,5 +1,7 @@
 package com.pagerelay.bot.automation
 
+import com.pagerelay.bot.ai.ConversationTurn
+
 /**
  * Decoupled bridge between the AccessibilityService lifecycle and AutomationCoordinator.
  */
@@ -48,5 +50,6 @@ data class IncomingPageMessage(
     val senderName: String,
     val messageText: String,
     val receivedAtMillis: Long,
+    val notificationHistory: List<ConversationTurn> = emptyList(),
     val replyAction: suspend (String) -> Result<Unit>
 )

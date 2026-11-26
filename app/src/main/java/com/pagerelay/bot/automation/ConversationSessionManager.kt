@@ -17,7 +17,15 @@ data class IngestionDecision(
     val action: MessageAction,
     val conversationKey: String,
     val sessionInfo: ConversationSessionInfo,
-    val priorTurns: List<ConversationTurn>
+    val priorTurns: List<ConversationTurn>,
+    val messageSequence: Long = 0L
+)
+
+data class ConversationContextSnapshot(
+    val conversationKey: String,
+    val openingUserMessage: String?,
+    val turns: List<ConversationTurn>,
+    val totalUserMessages: Int
 )
 
 class ConversationSessionManager(
@@ -29,8 +37,11 @@ class ConversationSessionManager(
         val conversationKey: String,
         var senderTitle: String,
         var messageCount: Int = 0,
+        var messageSequence: Long = 0L,
         var initialStaticReplySent: Boolean = false,
         var autoCallTriggered: Boolean = false,
+        var openingUserMessage: String? = null,
+        var openingAssistantReply: String? = null,
         var lastMessagePreview: String = "",
         var lastUpdatedMillis: Long = 0L,
         val turns: MutableList<ConversationTurn> = mutableListOf(),
@@ -43,7 +54,9 @@ class ConversationSessionManager(
             initialStaticReplySent = initialStaticReplySent,
             autoCallTriggered = autoCallTriggered,
             lastMessagePreview = lastMessagePreview,
-            lastUpdatedMillis = lastUpdatedMillis
+            lastUpdatedMillis = lastUpdatedMillis,
+            openingMessagePreview = openingUserMessage.orEmpty().take(120),
+            contextTurnCount = turns.size
         )
     }
 
@@ -55,7 +68,8 @@ class ConversationSessionManager(
     fun onIncomingMessage(
         conversationKey: String,
         senderTitle: String,
-        messageText: String
+        messageText: String,
+        notificationHistory: List<ConversationTurn> = emptyList()
     ): IngestionDecision = synchronized(lock) {
         val now = clock()
         val normalizedKey = conversationKey.trim()
@@ -73,7 +87,8 @@ class ConversationSessionManager(
                     action = MessageAction.IGNORE_DUPLICATE,
                     conversationKey = normalizedKey,
                     sessionInfo = existing.toInfo(),
-                    priorTurns = existing.turns.toList()
+                    priorTurns = buildAnchoredTurnsLocked(existing),
+                    messageSequence = existing.messageSequence
                 )
             }
         }
@@ -84,11 +99,19 @@ class ConversationSessionManager(
             lastUpdatedMillis = now
         ).also { sessionMap[normalizedKey] = it }
 
-        val priorTurnsSnapshot = session.turns.toList()
+        // Backfill any earlier/batched messages exposed by Android's MessagingStyle notification
+        // BEFORE capturing priorTurns and appending the newest incoming message.
+        mergeNotificationHistoryLocked(session, notificationHistory, cleanText)
+
+        val priorTurnsSnapshot = buildAnchoredTurnsLocked(session)
         val isFirstMessage = session.messageCount == 0 && !session.initialStaticReplySent
 
         session.senderTitle = cleanSender
         session.messageCount += 1
+        session.messageSequence += 1L
+        if (session.openingUserMessage.isNullOrBlank()) {
+            session.openingUserMessage = cleanText
+        }
         session.lastMessagePreview = cleanText.take(120)
         session.lastUpdatedMillis = now
         session.recentMessageFingerprints[fingerprint] = now
@@ -106,7 +129,8 @@ class ConversationSessionManager(
             action = action,
             conversationKey = normalizedKey,
             sessionInfo = session.toInfo(),
-            priorTurns = priorTurnsSnapshot
+            priorTurns = priorTurnsSnapshot,
+            messageSequence = session.messageSequence
         )
     }
 
@@ -114,9 +138,36 @@ class ConversationSessionManager(
         val session = sessionMap[conversationKey.trim()] ?: return
         val cleanReply = replyText.trim()
         if (cleanReply.isEmpty()) return
+        if (session.openingAssistantReply.isNullOrBlank()) {
+            session.openingAssistantReply = cleanReply
+        }
         appendTurnLocked(session, ConversationTurn(isFromUser = false, text = cleanReply))
         session.lastUpdatedMillis = clock()
         publishSessionsLocked()
+    }
+
+    fun hasNewerUserMessage(conversationKey: String, messageSequence: Long): Boolean = synchronized(lock) {
+        val session = sessionMap[conversationKey.trim()] ?: return false
+        session.messageSequence > messageSequence
+    }
+
+    fun getFullConversationContext(conversationKey: String): ConversationContextSnapshot = synchronized(lock) {
+        val key = conversationKey.trim()
+        val session = sessionMap[key]
+        if (session == null) {
+            return ConversationContextSnapshot(
+                conversationKey = key,
+                openingUserMessage = null,
+                turns = emptyList(),
+                totalUserMessages = 0
+            )
+        }
+        ConversationContextSnapshot(
+            conversationKey = key,
+            openingUserMessage = session.openingUserMessage,
+            turns = buildAnchoredTurnsLocked(session),
+            totalUserMessages = session.messageCount
+        )
     }
 
     fun markAutoCallTriggered(conversationKey: String) = synchronized(lock) {
@@ -138,15 +189,153 @@ class ConversationSessionManager(
     }
 
     fun getTurnsSnapshot(conversationKey: String): List<ConversationTurn> = synchronized(lock) {
-        sessionMap[conversationKey.trim()]?.turns?.toList().orEmpty()
+        val session = sessionMap[conversationKey.trim()] ?: return emptyList()
+        buildAnchoredTurnsLocked(session)
+    }
+
+    private fun mergeNotificationHistoryLocked(
+        session: MutableSession,
+        notificationHistory: List<ConversationTurn>,
+        currentIncomingText: String
+    ) {
+        val cleaned = notificationHistory
+            .map { it.copy(text = it.text.trim()) }
+            .filter { it.text.isNotEmpty() }
+        if (cleaned.isEmpty()) return
+
+        // Drop the trailing copy of the current incoming message (which will be appended by caller).
+        val priorFromNotification = if (
+            cleaned.last().isFromUser &&
+            normalizeForCompare(cleaned.last().text) == normalizeForCompare(currentIncomingText)
+        ) {
+            cleaned.dropLast(1)
+        } else {
+            cleaned
+        }
+        if (priorFromNotification.isEmpty()) return
+
+        if (session.turns.isEmpty()) {
+            for (turn in priorFromNotification) {
+                if (turn.isFromUser && session.openingUserMessage.isNullOrBlank()) {
+                    session.openingUserMessage = turn.text
+                } else if (!turn.isFromUser && session.openingAssistantReply.isNullOrBlank()) {
+                    session.openingAssistantReply = turn.text
+                }
+                appendTurnLocked(session, turn)
+            }
+            return
+        }
+
+        // Align the tail of session.turns against priorFromNotification to recover any skipped/batched turns.
+        val lastRecorded = session.turns.last()
+        var matchEndIndex = -1
+        for (i in priorFromNotification.lastIndex downTo 0) {
+            if (turnsEqual(priorFromNotification[i], lastRecorded)) {
+                var valid = true
+                var sIdx = session.turns.lastIndex - 1
+                var nIdx = i - 1
+                var checked = 0
+                while (sIdx >= 0 && nIdx >= 0 && checked < 4) {
+                    if (!turnsEqual(priorFromNotification[nIdx], session.turns[sIdx])) {
+                        valid = false
+                        break
+                    }
+                    sIdx--
+                    nIdx--
+                    checked++
+                }
+                if (valid) {
+                    matchEndIndex = i
+                    break
+                }
+            }
+        }
+
+        if (matchEndIndex >= 0) {
+            // Check if notificationHistory contains earlier messages before session.turns[0]
+            val earliestSessionTurn = session.turns.first()
+            val firstMatchIdx = priorFromNotification
+                .subList(0, matchEndIndex + 1)
+                .indexOfFirst { turnsEqual(it, earliestSessionTurn) }
+            if (firstMatchIdx > 0) {
+                val missingHead = priorFromNotification.subList(0, firstMatchIdx)
+                session.turns.addAll(0, missingHead)
+                val earliestUser = missingHead.firstOrNull { it.isFromUser }?.text
+                if (!earliestUser.isNullOrBlank()) {
+                    session.openingUserMessage = earliestUser
+                }
+                trimRollingTurnsLocked(session)
+            }
+
+            // Append any missed/batched turns that occurred after our last recorded turn
+            if (matchEndIndex + 1 < priorFromNotification.size) {
+                for (j in (matchEndIndex + 1) until priorFromNotification.size) {
+                    val missed = priorFromNotification[j]
+                    if (missed.isFromUser && session.openingUserMessage.isNullOrBlank()) {
+                        session.openingUserMessage = missed.text
+                    }
+                    appendTurnLocked(session, missed)
+                }
+            }
+        } else if (session.openingUserMessage.isNullOrBlank()) {
+            priorFromNotification.firstOrNull { it.isFromUser }?.let { firstUser ->
+                session.openingUserMessage = firstUser.text
+            }
+        }
+    }
+
+    private fun buildAnchoredTurnsLocked(session: MutableSession): List<ConversationTurn> {
+        val current = session.turns.toList()
+        val opening = session.openingUserMessage?.trim()?.takeIf { it.isNotEmpty() } ?: return current
+        val hasOpeningAtStart = current.firstOrNull()?.let { first ->
+            first.isFromUser && normalizeForCompare(first.text) == normalizeForCompare(opening)
+        } == true
+        if (hasOpeningAtStart) {
+            return current
+        }
+
+        val anchored = mutableListOf(ConversationTurn(isFromUser = true, text = opening))
+        val openingReply = session.openingAssistantReply?.trim()?.takeIf { it.isNotEmpty() }
+        if (openingReply != null) {
+            val alreadyHasOpeningReply = current.firstOrNull()?.let { first ->
+                !first.isFromUser && normalizeForCompare(first.text) == normalizeForCompare(openingReply)
+            } == true
+            if (!alreadyHasOpeningReply) {
+                anchored.add(ConversationTurn(isFromUser = false, text = openingReply))
+            }
+        }
+        anchored.addAll(current)
+        return anchored
     }
 
     private fun appendTurnLocked(session: MutableSession, turn: ConversationTurn) {
         session.turns.add(turn)
+        trimRollingTurnsLocked(session)
+    }
+
+    private fun trimRollingTurnsLocked(session: MutableSession) {
+        // Keep the opening message (and initial reply if present) anchored; trim from the middle if ever over cap.
+        val anchorCount = when {
+            session.turns.size >= 2 &&
+                session.turns[0].isFromUser &&
+                !session.turns[1].isFromUser &&
+                normalizeForCompare(session.turns[0].text) == normalizeForCompare(session.openingUserMessage.orEmpty()) -> 2
+            session.turns.isNotEmpty() &&
+                session.turns[0].isFromUser &&
+                normalizeForCompare(session.turns[0].text) == normalizeForCompare(session.openingUserMessage.orEmpty()) -> 1
+            else -> 0
+        }
         while (session.turns.size > MAX_ROLLING_TURNS) {
-            session.turns.removeAt(0)
+            val removeIdx = if (anchorCount < session.turns.size) anchorCount else 0
+            session.turns.removeAt(removeIdx)
         }
     }
+
+    private fun turnsEqual(a: ConversationTurn, b: ConversationTurn): Boolean =
+        a.isFromUser == b.isFromUser && normalizeForCompare(a.text) == normalizeForCompare(b.text)
+
+    private fun normalizeForCompare(text: String): String =
+        text.lowercase(Locale.ROOT).replace(Regex("""\s+"""), " ").trim()
 
     private fun pruneFingerprintsLocked(session: MutableSession, now: Long) {
         val cutoff = now - dedupeWindowMillis
@@ -154,8 +343,8 @@ class ConversationSessionManager(
     }
 
     private fun buildMessageFingerprint(sender: String, text: String): String {
-        val normSender = sender.lowercase(Locale.ROOT).replace(Regex("""\s+"""), " ").trim()
-        val normText = text.lowercase(Locale.ROOT).replace(Regex("""\s+"""), " ").trim()
+        val normSender = normalizeForCompare(sender)
+        val normText = normalizeForCompare(text)
         return "$normSender|$normText"
     }
 
@@ -166,7 +355,7 @@ class ConversationSessionManager(
     }
 
     companion object {
-        const val MAX_ROLLING_TURNS = 8
+        const val MAX_ROLLING_TURNS = 40
         const val DEFAULT_DEDUPE_WINDOW_MS = 15_000L
     }
 }

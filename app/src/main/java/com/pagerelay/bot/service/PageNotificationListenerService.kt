@@ -8,7 +8,9 @@ import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
 import com.pagerelay.bot.PageRelayApplication
+import com.pagerelay.bot.ai.ConversationTurn
 import com.pagerelay.bot.automation.IncomingPageMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -56,6 +58,7 @@ class PageNotificationListenerService : NotificationListenerService() {
             senderName = extracted.senderName,
             messageText = extracted.messageText,
             receivedAtMillis = sbn.postTime.takeIf { it > 0L } ?: System.currentTimeMillis(),
+            notificationHistory = extracted.notificationHistory,
             replyAction = { replyText ->
                 dispatchInlineReply(replySpec, replyText)
             }
@@ -78,7 +81,8 @@ class PageNotificationListenerService : NotificationListenerService() {
         val conversationTitle: String?,
         val subText: String?,
         val senderName: String,
-        val messageText: String
+        val messageText: String,
+        val notificationHistory: List<ConversationTurn>
     )
 
     private fun findInlineReplyAction(notification: Notification): InlineReplySpec? {
@@ -114,10 +118,30 @@ class PageNotificationListenerService : NotificationListenerService() {
             null
         }
 
-        val lastStyleMessage = messagingStyle?.messages?.lastOrNull()
-        val senderFromStyle = lastStyleMessage?.person?.name?.toString()?.trim()
+        val selfUser = messagingStyle?.user
+        val styledMessages = buildList {
+            if (messagingStyle != null) {
+                addAll(messagingStyle.historicMessages)
+                addAll(messagingStyle.messages)
+            }
+        }.filter { !it.text.isNullOrBlank() }
+
+        // If Messenger re-posted the notification immediately after OUR inline reply,
+        // the newest MessagingStyle message belongs to selfUser (or null person). Ignore self-echoes.
+        val latestStyled = styledMessages.lastOrNull()
+        if (latestStyled != null && isSelfMessagingStyleMessage(latestStyled, selfUser)) {
+            return null
+        }
+
+        val notificationHistory = buildNotificationHistory(
+            styledMessages = styledMessages,
+            selfUser = selfUser,
+            extras = extras
+        )
+
+        val senderFromStyle = latestStyled?.person?.name?.toString()?.trim()
             ?.takeIf { it.isNotEmpty() }
-        val textFromStyle = lastStyleMessage?.text?.toString()?.trim()
+        val textFromStyle = latestStyled?.text?.toString()?.trim()
             ?.takeIf { it.isNotEmpty() }
 
         val fallbackText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim()
@@ -143,8 +167,58 @@ class PageNotificationListenerService : NotificationListenerService() {
             conversationTitle = conversationTitle,
             subText = rawSubText,
             senderName = senderName,
-            messageText = messageText
+            messageText = messageText,
+            notificationHistory = notificationHistory
         )
+    }
+
+    private fun isSelfMessagingStyleMessage(
+        message: NotificationCompat.MessagingStyle.Message,
+        selfUser: Person?
+    ): Boolean {
+        val sender = message.person ?: return true
+        if (selfUser == null) return false
+
+        val selfKey = selfUser.key?.trim()?.takeIf { it.isNotEmpty() }
+        val senderKey = sender.key?.trim()?.takeIf { it.isNotEmpty() }
+        if (selfKey != null && senderKey != null) {
+            return selfKey == senderKey
+        }
+
+        val selfName = selfUser.name?.toString()?.trim()?.lowercase(Locale.ROOT)
+        val senderName = sender.name?.toString()?.trim()?.lowercase(Locale.ROOT)
+        if (!selfName.isNullOrBlank() && !senderName.isNullOrBlank() && selfName == senderName) {
+            return true
+        }
+        return false
+    }
+
+    private fun buildNotificationHistory(
+        styledMessages: List<NotificationCompat.MessagingStyle.Message>,
+        selfUser: Person?,
+        extras: Bundle
+    ): List<ConversationTurn> {
+        if (styledMessages.isNotEmpty()) {
+            return styledMessages.mapNotNull { msg ->
+                val text = msg.text?.toString()?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                val isSelf = isSelfMessagingStyleMessage(msg, selfUser)
+                ConversationTurn(
+                    isFromUser = !isSelf,
+                    text = text
+                )
+            }
+        }
+
+        val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+            ?.mapNotNull { line -> line?.toString()?.trim()?.takeIf { it.isNotEmpty() } }
+            .orEmpty()
+        if (textLines.size > 1) {
+            return textLines.map { line ->
+                ConversationTurn(isFromUser = true, text = line)
+            }
+        }
+
+        return emptyList()
     }
 
     private fun buildConversationKey(

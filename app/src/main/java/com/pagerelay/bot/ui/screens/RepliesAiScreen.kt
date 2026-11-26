@@ -235,7 +235,8 @@ fun RepliesAiScreen(
             ) {
                 Text(
                     text = "Message #1 always triggers your Static Reply and Messenger Auto-Call. " +
-                        "When enabled, Gemini generates concise follow-up responses for subsequent customer messages.",
+                        "Before every 2nd, 3rd, and subsequent reply, Gemini re-reads the full conversation starting from Message #1 " +
+                        "(including rapid burst messages) so it always keeps the original context.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -475,7 +476,12 @@ private fun SessionItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Updated ${formatShortTimestamp(session.lastUpdatedMillis)} • ${session.messageCount} msg(s)",
+                    text = buildString {
+                        append("Updated ${formatShortTimestamp(session.lastUpdatedMillis)} • ${session.messageCount} msg(s)")
+                        if (session.contextTurnCount > 0) {
+                            append(" • ${session.contextTurnCount} turns in context")
+                        }
+                    },
                     style = MonoTimestampStyle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -498,9 +504,19 @@ private fun SessionItemCard(
             }
         }
 
+        if (session.openingMessagePreview.isNotBlank() && session.openingMessagePreview != session.lastMessagePreview) {
+            Text(
+                text = "1st msg: \"${session.openingMessagePreview}\"",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
         if (session.lastMessagePreview.isNotBlank()) {
             Text(
-                text = "\"${session.lastMessagePreview}\"",
+                text = "Latest: \"${session.lastMessagePreview}\"",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,

@@ -35,7 +35,8 @@ class GeminiReplyClient(
         systemPrompt: String,
         senderName: String,
         history: List<ConversationTurn>,
-        latestMessage: String
+        latestMessage: String,
+        openingMessage: String? = null
     ): Result<String> = withContext(Dispatchers.IO) {
         val trimmedKey = apiKey.trim()
         if (trimmedKey.isBlank()) {
@@ -62,7 +63,8 @@ class GeminiReplyClient(
                 systemPrompt = systemPrompt,
                 senderName = senderName,
                 history = history,
-                latestMessage = trimmedMessage
+                latestMessage = trimmedMessage,
+                openingMessage = openingMessage
             )
 
             val request = Request.Builder()
@@ -149,18 +151,26 @@ class GeminiReplyClient(
         systemPrompt: String,
         senderName: String,
         history: List<ConversationTurn>,
-        latestMessage: String
+        latestMessage: String,
+        openingMessage: String? = null
     ): JSONObject {
         val root = JSONObject()
 
-        val effectivePrompt = buildString {
-            append(systemPrompt.trim().ifBlank { DEFAULT_SYSTEM_PROMPT })
-            if (senderName.isNotBlank()) {
-                append("\nCustomer display name: ")
-                append(senderName.trim())
-            }
-            append("\nKeep replies plain-text, concise (1-3 sentences), and suitable for Facebook Messenger inline replies.")
-        }
+        val preparedTurns = prepareConversationTurns(
+            history = history,
+            latestMessage = latestMessage,
+            openingMessage = openingMessage,
+            maxTurns = MAX_HISTORY_TURNS
+        )
+        val effectiveOpening = openingMessage?.trim()?.takeIf { it.isNotEmpty() }
+            ?: history.firstOrNull { it.isFromUser && it.text.isNotBlank() }?.text?.trim()
+
+        val effectivePrompt = buildEffectiveSystemPrompt(
+            systemPrompt = systemPrompt,
+            senderName = senderName,
+            openingMessage = effectiveOpening,
+            totalTurns = preparedTurns.size
+        )
 
         root.put(
             "system_instruction",
@@ -171,31 +181,13 @@ class GeminiReplyClient(
         )
 
         val contents = JSONArray()
-        val recentTurns = history.takeLast(MAX_HISTORY_TURNS)
-        for (turn in recentTurns) {
-            val cleanText = turn.text.trim()
-            if (cleanText.isBlank()) continue
+        for (turn in preparedTurns) {
             contents.put(
                 JSONObject()
                     .put("role", if (turn.isFromUser) "user" else "model")
                     .put(
                         "parts",
-                        JSONArray().put(JSONObject().put("text", cleanText))
-                    )
-            )
-        }
-
-        val lastTurnMatchesLatest = recentTurns.lastOrNull()?.let { last ->
-            last.isFromUser && last.text.trim() == latestMessage
-        } == true
-
-        if (!lastTurnMatchesLatest) {
-            contents.put(
-                JSONObject()
-                    .put("role", "user")
-                    .put(
-                        "parts",
-                        JSONArray().put(JSONObject().put("text", latestMessage))
+                        JSONArray().put(JSONObject().put("text", turn.text))
                     )
             )
         }
@@ -268,10 +260,109 @@ class GeminiReplyClient(
 
     companion object {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
-        private const val MAX_HISTORY_TURNS = 8
+        internal const val MAX_HISTORY_TURNS = 40
         private const val MAX_REPLY_CHARS = 480
         private const val DEFAULT_SYSTEM_PROMPT =
             "You are a polite, concise assistant replying on behalf of a Facebook Page."
+
+        internal fun buildEffectiveSystemPrompt(
+            systemPrompt: String,
+            senderName: String,
+            openingMessage: String?,
+            totalTurns: Int
+        ): String = buildString {
+            append(systemPrompt.trim().ifBlank { DEFAULT_SYSTEM_PROMPT })
+            if (senderName.isNotBlank()) {
+                append("\nSender display name: ")
+                append(senderName.trim())
+            }
+            append(
+                "\nConversation context rule: Always re-read the entire conversation starting from the very first message before replying. " +
+                    "The sender may send short or rapid follow-up messages (such as countdown numbers like \"1\", \"2\", \"3\", or brief prompts) " +
+                    "whose meaning depends directly on the opening message and earlier turns."
+            )
+            val cleanOpening = openingMessage?.trim().orEmpty()
+            if (cleanOpening.isNotBlank() && totalTurns > 1) {
+                append("\nOpening message of this conversation (always keep this context in mind): \"")
+                append(cleanOpening.take(400))
+                append("\"")
+            }
+            append("\nKeep replies plain-text, concise (1-3 sentences), and suitable for Facebook Messenger inline replies.")
+        }
+
+        /**
+         * Prepares the full conversation turns for Gemini:
+         * 1. Always preserves the opening user message so long/burst threads never lose initial context.
+         * 2. Ensures the latest incoming message is included once at the end.
+         * 3. Merges consecutive same-role bursts (e.g. "Grand Prize...", "1", "2", "3") into clean
+         *    multi-line chronological turns so Gemini receives valid alternating user/model roles.
+         */
+        internal fun prepareConversationTurns(
+            history: List<ConversationTurn>,
+            latestMessage: String,
+            openingMessage: String? = null,
+            maxTurns: Int = MAX_HISTORY_TURNS
+        ): List<ConversationTurn> {
+            val cleaned = history
+                .map { it.copy(text = it.text.trim()) }
+                .filter { it.text.isNotEmpty() }
+                .toMutableList()
+
+            val cleanLatest = latestMessage.trim()
+            if (cleanLatest.isNotEmpty()) {
+                val alreadyEndedWithLatest = cleaned.lastOrNull()?.let { last ->
+                    last.isFromUser && last.text == cleanLatest
+                } == true
+                if (!alreadyEndedWithLatest) {
+                    cleaned.add(ConversationTurn(isFromUser = true, text = cleanLatest))
+                }
+            }
+
+            if (cleaned.isEmpty()) {
+                return emptyList()
+            }
+
+            val anchorText = openingMessage?.trim()?.takeIf { it.isNotEmpty() }
+                ?: cleaned.firstOrNull { it.isFromUser }?.text
+
+            val bounded: List<ConversationTurn> = if (cleaned.size <= maxTurns) {
+                if (anchorText != null && cleaned.none { it.isFromUser && it.text == anchorText }) {
+                    listOf(ConversationTurn(isFromUser = true, text = anchorText)) + cleaned
+                } else {
+                    cleaned
+                }
+            } else {
+                val tail = cleaned.takeLast((maxTurns - 1).coerceAtLeast(1))
+                val tailHasAnchor = anchorText == null || tail.any { it.isFromUser && it.text == anchorText }
+                if (tailHasAnchor) {
+                    cleaned.takeLast(maxTurns)
+                } else {
+                    listOf(ConversationTurn(isFromUser = true, text = anchorText!!)) + tail
+                }
+            }
+
+            // Merge consecutive same-role turns into clean multi-line messages for valid Gemini alternation.
+            val merged = mutableListOf<ConversationTurn>()
+            for (turn in bounded) {
+                val prev = merged.lastOrNull()
+                if (prev != null && prev.isFromUser == turn.isFromUser) {
+                    merged[merged.lastIndex] = prev.copy(text = "${prev.text}\n${turn.text}")
+                } else {
+                    merged.add(turn)
+                }
+            }
+
+            // Gemini contents must begin with a user turn.
+            while (merged.isNotEmpty() && !merged.first().isFromUser) {
+                merged.removeAt(0)
+            }
+
+            if (merged.isEmpty() && cleanLatest.isNotEmpty()) {
+                merged.add(ConversationTurn(isFromUser = true, text = cleanLatest))
+            }
+
+            return merged
+        }
 
         private val ipv4FirstDns = object : Dns {
             override fun lookup(hostname: String): List<InetAddress> {

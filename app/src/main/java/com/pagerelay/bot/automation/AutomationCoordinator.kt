@@ -32,11 +32,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 class AutomationCoordinator(
@@ -51,6 +54,7 @@ class AutomationCoordinator(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val callQueue = Channel<CallRequest>(capacity = Channel.BUFFERED)
+    private val conversationLocks = ConcurrentHashMap<String, Mutex>()
 
     @Volatile
     private var activeCallJob: Job? = null
@@ -131,7 +135,8 @@ class AutomationCoordinator(
             val decision = sessionManager.onIncomingMessage(
                 conversationKey = message.conversationKey,
                 senderTitle = message.senderName,
-                messageText = message.messageText
+                messageText = message.messageText,
+                notificationHistory = message.notificationHistory
             )
 
             if (decision.action == MessageAction.IGNORE_DUPLICATE) {
@@ -161,16 +166,26 @@ class AutomationCoordinator(
                 summary = "From ${message.senderName} (${message.packageName}): \"${message.messageText.take(120)}\""
             )
 
-            when (decision.action) {
-                MessageAction.FIRST_MESSAGE_STATIC_AND_CALL -> {
-                    handleFirstSessionMessage(message, settings)
+            // Serialize per-conversation reply execution so static reply / prior Gemini replies
+            // are recorded before the 2nd, 3rd, or burst follow-up re-reads the full conversation.
+            val conversationMutex = conversationLocks.computeIfAbsent(message.conversationKey) { Mutex() }
+            conversationMutex.withLock {
+                val latestSettings = settingsStore.getCurrentSettings()
+                if (latestSettings.emergencyStopped || emergencyStopFlag.get() || !latestSettings.automationEnabled) {
+                    return@withLock
                 }
 
-                MessageAction.FOLLOWUP_GEMINI -> {
-                    handleFollowUpMessage(message, settings, decision)
-                }
+                when (decision.action) {
+                    MessageAction.FIRST_MESSAGE_STATIC_AND_CALL -> {
+                        handleFirstSessionMessage(message, latestSettings)
+                    }
 
-                MessageAction.IGNORE_DUPLICATE -> Unit
+                    MessageAction.FOLLOWUP_GEMINI -> {
+                        handleFollowUpMessage(message, latestSettings, decision)
+                    }
+
+                    MessageAction.IGNORE_DUPLICATE -> Unit
+                }
             }
         }
     }
@@ -276,15 +291,34 @@ class AutomationCoordinator(
             return
         }
 
-        setStepState(STEP_GEMINI, PipelineStepState.ACTIVE, "Generating Gemini follow-up reply...")
+        // If a newer burst message already arrived while this one waited for the conversation lock,
+        // yield so the newest turn replies ONCE after re-reading the entire burst + opening message.
+        if (sessionManager.hasNewerUserMessage(message.conversationKey, decision.messageSequence)) {
+            return
+        }
+
+        // Always re-read the complete, up-to-date conversation starting from Message #1 before calling Gemini.
+        val fullContext = sessionManager.getFullConversationContext(message.conversationKey)
+        val contextCount = fullContext.turns.size
+
+        setStepState(
+            STEP_GEMINI,
+            PipelineStepState.ACTIVE,
+            "Re-reading full conversation ($contextCount turns) & generating Gemini reply..."
+        )
         val result = geminiClient.generateReply(
             apiKey = settings.geminiApiKey,
             model = settings.geminiModel,
             systemPrompt = settings.geminiSystemPrompt,
             senderName = message.senderName,
-            history = decision.priorTurns,
-            latestMessage = message.messageText
+            history = fullContext.turns,
+            latestMessage = message.messageText,
+            openingMessage = fullContext.openingUserMessage
         )
+
+        if (emergencyStopFlag.get()) {
+            return
+        }
 
         result.fold(
             onSuccess = { aiReply ->
@@ -295,12 +329,12 @@ class AutomationCoordinator(
                         setStepState(
                             STEP_GEMINI,
                             PipelineStepState.COMPLETED,
-                            "Gemini follow-up sent to ${message.senderName}"
+                            "Gemini follow-up sent to ${message.senderName} ($contextCount turns read)"
                         )
                         logEvent(
                             type = LogEventType.GEMINI_REPLY,
                             title = "Gemini Follow-Up Sent",
-                            summary = "Replied via ${settings.geminiModel} to ${message.senderName}: \"${aiReply.take(140)}\""
+                            summary = "Read $contextCount convo turns (from 1st msg) • Replied via ${settings.geminiModel} to ${message.senderName}: \"${aiReply.take(140)}\""
                         )
                     },
                     onFailure = { sendErr ->
