@@ -7,6 +7,7 @@
     <img src="https://img.shields.io/badge/Platform-Android%208.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 8.0+" />
     <img src="https://img.shields.io/badge/Language-Kotlin%202.1-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
     <img src="https://img.shields.io/badge/UI-Jetpack%20Compose%20Material%203-2563EB?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
+    <img src="https://img.shields.io/badge/Icons-HugeIcons%20Compose-141B34?style=flat-square" alt="HugeIcons Compose" />
     <img src="https://img.shields.io/badge/Emulators-LDPlayer%20%7C%20Android%20Studio%20AVD-0D9488?style=flat-square" alt="LDPlayer & AVD" />
     <img src="https://img.shields.io/badge/Calling-Messenger%20Audio%20Only%20(Experimental)-D97706?style=flat-square" alt="Experimental Messenger Audio Only" />
   </p>

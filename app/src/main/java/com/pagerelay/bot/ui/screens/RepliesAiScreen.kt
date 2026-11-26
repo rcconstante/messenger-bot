@@ -19,20 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Reply
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material.icons.rounded.Forum
-import androidx.compose.material.icons.rounded.GppGood
-import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material.icons.rounded.MarkChatRead
-import androidx.compose.material.icons.rounded.PhoneInTalk
-import androidx.compose.material.icons.rounded.RestartAlt
-import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -69,6 +55,20 @@ import com.pagerelay.bot.ui.components.SyncedOutlinedTextField
 import com.pagerelay.bot.ui.components.formatShortTimestamp
 import com.pagerelay.bot.ui.theme.MonoTimestampStyle
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.AlertCircle
+import me.rerere.hugeicons.stroke.CallRinging02
+import me.rerere.hugeicons.stroke.CheckmarkCircle02
+import me.rerere.hugeicons.stroke.Delete02
+import me.rerere.hugeicons.stroke.Key01
+import me.rerere.hugeicons.stroke.MailReply01
+import me.rerere.hugeicons.stroke.MessageDone01
+import me.rerere.hugeicons.stroke.MessageMultiple02
+import me.rerere.hugeicons.stroke.Reload
+import me.rerere.hugeicons.stroke.ShieldCheck
+import me.rerere.hugeicons.stroke.Sparkles
+import me.rerere.hugeicons.stroke.View
+import me.rerere.hugeicons.stroke.ViewOffSlash
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -117,7 +117,7 @@ fun RepliesAiScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.GppGood,
+                            imageVector = HugeIcons.ShieldCheck,
                             contentDescription = null,
                             tint = semantic.onSuccessContainer,
                             modifier = Modifier.size(20.dp)
@@ -144,7 +144,7 @@ fun RepliesAiScreen(
             SectionCard(
                 title = "Target Facebook Page & Static Reply",
                 subtitle = "Sent instantly on the first incoming message of a conversation",
-                icon = Icons.AutoMirrored.Rounded.Reply
+                icon = HugeIcons.MailReply01
             ) {
                 SyncedOutlinedTextField(
                     externalValue = settings.targetPageName,
@@ -225,7 +225,7 @@ fun RepliesAiScreen(
             SectionCard(
                 title = "Gemini AI Follow-Up Replies",
                 subtitle = "Optional AI replies for message #2 and onward in the same thread",
-                icon = Icons.Rounded.AutoAwesome,
+                icon = HugeIcons.Sparkles,
                 trailingHeader = {
                     Switch(
                         checked = settings.geminiEnabled,
@@ -247,7 +247,7 @@ fun RepliesAiScreen(
                     placeholder = "AIza...",
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Rounded.Key,
+                            imageVector = HugeIcons.Key01,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -255,7 +255,7 @@ fun RepliesAiScreen(
                     trailingIcon = {
                         IconButton(onClick = { showApiKey = !showApiKey }) {
                             Icon(
-                                imageVector = if (showApiKey) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                                imageVector = if (showApiKey) HugeIcons.ViewOffSlash else HugeIcons.View,
                                 contentDescription = if (showApiKey) "Hide API key" else "Show API key"
                             )
                         }
@@ -284,7 +284,7 @@ fun RepliesAiScreen(
                                 leadingIcon = if (selected) {
                                     {
                                         Icon(
-                                            imageVector = Icons.Rounded.CheckCircle,
+                                            imageVector = HugeIcons.CheckmarkCircle02,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -325,7 +325,7 @@ fun RepliesAiScreen(
                             Text("Testing...")
                         } else {
                             Icon(
-                                imageVector = Icons.Rounded.AutoAwesome,
+                                imageVector = HugeIcons.Sparkles,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -357,7 +357,7 @@ fun RepliesAiScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
-                                    imageVector = if (ok) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
+                                    imageVector = if (ok) HugeIcons.CheckmarkCircle02 else HugeIcons.AlertCircle,
                                     contentDescription = null,
                                     tint = if (ok) semantic.onSuccessContainer else semantic.onEmergencyContainer,
                                     modifier = Modifier.size(18.dp)
@@ -380,12 +380,12 @@ fun RepliesAiScreen(
             SectionCard(
                 title = "Active Conversation Sessions",
                 subtitle = "Reset a session to re-test the initial static reply and call trigger",
-                icon = Icons.Rounded.Forum,
+                icon = HugeIcons.MessageMultiple02,
                 trailingHeader = {
                     if (uiState.activeSessions.isNotEmpty()) {
                         TextButton(onClick = onClearAllSessions) {
                             Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
+                                imageVector = HugeIcons.Delete02,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -408,7 +408,7 @@ fun RepliesAiScreen(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Forum,
+                                imageVector = HugeIcons.MessageMultiple02,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(28.dp)
@@ -479,7 +479,7 @@ private fun SessionItemCard(
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.RestartAlt,
+                    imageVector = HugeIcons.Reload,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp)
                 )
@@ -510,7 +510,7 @@ private fun SessionItemCard(
                     text = "Static Reply Sent",
                     containerColor = semantic.successContainer,
                     contentColor = semantic.onSuccessContainer,
-                    icon = Icons.Rounded.MarkChatRead
+                    icon = HugeIcons.MessageDone01
                 )
             }
             if (session.autoCallTriggered) {
@@ -518,7 +518,7 @@ private fun SessionItemCard(
                     text = "Call Triggered",
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    icon = Icons.Rounded.PhoneInTalk
+                    icon = HugeIcons.CallRinging02
                 )
             }
         }

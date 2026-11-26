@@ -21,22 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Reply
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.NotificationsActive
-import androidx.compose.material.icons.rounded.PersonSearch
-import androidx.compose.material.icons.rounded.PhoneInTalk
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.StopCircle
-import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -71,6 +55,22 @@ import com.pagerelay.bot.ui.components.formatLogTimestamp
 import com.pagerelay.bot.ui.theme.MonoDiagnosticStyle
 import com.pagerelay.bot.ui.theme.MonoTimestampStyle
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.AlertCircle
+import me.rerere.hugeicons.stroke.ArrowDown01
+import me.rerere.hugeicons.stroke.ArrowUp01
+import me.rerere.hugeicons.stroke.CallRinging02
+import me.rerere.hugeicons.stroke.Clock04
+import me.rerere.hugeicons.stroke.Copy01
+import me.rerere.hugeicons.stroke.Delete02
+import me.rerere.hugeicons.stroke.InformationCircle
+import me.rerere.hugeicons.stroke.MailReply01
+import me.rerere.hugeicons.stroke.Notification03
+import me.rerere.hugeicons.stroke.Share08
+import me.rerere.hugeicons.stroke.Sparkles
+import me.rerere.hugeicons.stroke.StopCircle
+import me.rerere.hugeicons.stroke.Timer02
+import me.rerere.hugeicons.stroke.UserSearch01
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -170,7 +170,7 @@ fun ActivityLogsScreen(
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.ContentCopy,
+                            imageVector = HugeIcons.Copy01,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
@@ -189,7 +189,7 @@ fun ActivityLogsScreen(
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.Share,
+                            imageVector = HugeIcons.Share08,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
@@ -207,7 +207,7 @@ fun ActivityLogsScreen(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.DeleteOutline,
+                            imageVector = HugeIcons.Delete02,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
@@ -249,7 +249,7 @@ fun ActivityLogsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.History,
+                                imageVector = HugeIcons.Clock04,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(26.dp)
@@ -334,42 +334,42 @@ private fun AuditLogTimelineCard(
 
     val (icon, iconBg, iconTint) = when {
         entry.type == LogEventType.EMERGENCY_STOP -> Triple(
-            Icons.Rounded.StopCircle,
+            HugeIcons.StopCircle,
             semantic.emergencyContainer,
             semantic.onEmergencyContainer
         )
         entry.isError || entry.type == LogEventType.ERROR -> Triple(
-            Icons.Rounded.ErrorOutline,
+            HugeIcons.AlertCircle,
             semantic.emergencyContainer,
             semantic.onEmergencyContainer
         )
         entry.type == LogEventType.CALL_ATTEMPT -> Triple(
-            Icons.Rounded.PhoneInTalk,
+            HugeIcons.CallRinging02,
             MaterialTheme.colorScheme.primaryContainer,
             MaterialTheme.colorScheme.onPrimaryContainer
         )
         entry.type == LogEventType.CAPTURE_CONVERSATION -> Triple(
-            Icons.Rounded.PersonSearch,
+            HugeIcons.UserSearch01,
             MaterialTheme.colorScheme.secondaryContainer,
             MaterialTheme.colorScheme.onSecondaryContainer
         )
         entry.type == LogEventType.STATIC_REPLY -> Triple(
-            Icons.AutoMirrored.Rounded.Reply,
+            HugeIcons.MailReply01,
             semantic.successContainer,
             semantic.onSuccessContainer
         )
         entry.type == LogEventType.GEMINI_REPLY -> Triple(
-            Icons.Rounded.AutoAwesome,
+            HugeIcons.Sparkles,
             MaterialTheme.colorScheme.secondaryContainer,
             MaterialTheme.colorScheme.onSecondaryContainer
         )
         entry.type == LogEventType.INCOMING_MESSAGE -> Triple(
-            Icons.Rounded.NotificationsActive,
+            HugeIcons.Notification03,
             MaterialTheme.colorScheme.primaryContainer,
             MaterialTheme.colorScheme.onPrimaryContainer
         )
         else -> Triple(
-            Icons.Rounded.Info,
+            HugeIcons.InformationCircle,
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -484,7 +484,7 @@ private fun AuditLogTimelineCard(
                             text = formatDuration(dur),
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            icon = Icons.Rounded.Timer
+                            icon = HugeIcons.Timer02
                         )
                     }
                 }
@@ -517,7 +517,7 @@ private fun AuditLogTimelineCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Icon(
-                                imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                imageVector = if (expanded) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
                                 contentDescription = if (expanded) "Hide diagnostic details" else "Show diagnostic details",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)

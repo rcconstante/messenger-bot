@@ -11,6 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.pagerelay.bot.R
 import com.pagerelay.bot.service.EmergencyStopReceiver
 
 class EmergencyStopNotificationHelper(
@@ -62,7 +63,7 @@ class EmergencyStopNotificationHelper(
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_phone_call)
+            .setSmallIcon(R.drawable.ic_notif_call)
             .setContentTitle(statusTitle)
             .setContentText(statusText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(statusText))
@@ -76,7 +77,7 @@ class EmergencyStopNotificationHelper(
                 }
             }
             .addAction(
-                android.R.drawable.ic_menu_close_clear_cancel,
+                R.drawable.ic_notif_stop,
                 "EMERGENCY STOP",
                 stopPendingIntent
             )

@@ -14,10 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.StopCircle
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -36,6 +32,10 @@ import com.pagerelay.bot.ui.theme.CrimsonStop
 import com.pagerelay.bot.ui.theme.CrimsonStopDark
 import com.pagerelay.bot.ui.theme.MonoTimestampStyle
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Alert02
+import me.rerere.hugeicons.stroke.Play
+import me.rerere.hugeicons.stroke.StopCircle
 
 @Composable
 fun EmergencyStopBar(
@@ -74,7 +74,7 @@ fun EmergencyStopBar(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Warning,
+                        imageVector = HugeIcons.Alert02,
                         contentDescription = null,
                         tint = semantic.emergency,
                         modifier = Modifier.size(22.dp)
@@ -104,7 +104,7 @@ fun EmergencyStopBar(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.PlayArrow,
+                            imageVector = HugeIcons.Play,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
@@ -134,7 +134,7 @@ fun EmergencyStopBar(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.StopCircle,
+                        imageVector = HugeIcons.StopCircle,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(22.dp)

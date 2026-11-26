@@ -18,12 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.Forum
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.PhoneInTalk
-import androidx.compose.material.icons.rounded.StopCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -65,15 +59,21 @@ import com.pagerelay.bot.ui.screens.RepliesAiScreen
 import com.pagerelay.bot.ui.theme.CrimsonStop
 import com.pagerelay.bot.ui.theme.PageRelayTheme
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.CallRinging02
+import me.rerere.hugeicons.stroke.Clock04
+import me.rerere.hugeicons.stroke.DashboardSquare02
+import me.rerere.hugeicons.stroke.MessageMultiple02
+import me.rerere.hugeicons.stroke.StopCircle
 
 private enum class PageRelayTab(
     val label: String,
     val icon: ImageVector
 ) {
-    OVERVIEW("Overview", Icons.Rounded.Dashboard),
-    AUTO_CALL("Auto-Call", Icons.Rounded.PhoneInTalk),
-    REPLIES_AI("Replies & AI", Icons.Rounded.Forum),
-    ACTIVITY("Activity", Icons.Rounded.History)
+    OVERVIEW("Overview", HugeIcons.DashboardSquare02),
+    AUTO_CALL("Auto-Call", HugeIcons.CallRinging02),
+    REPLIES_AI("Replies & AI", HugeIcons.MessageMultiple02),
+    ACTIVITY("Activity", HugeIcons.Clock04)
 }
 
 class MainActivity : ComponentActivity() {
@@ -226,7 +226,7 @@ private fun PageRelayAppScaffold(
                             }
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.StopCircle,
+                                imageVector = HugeIcons.StopCircle,
                                 contentDescription = "Emergency Stop",
                                 tint = CrimsonStop
                             )

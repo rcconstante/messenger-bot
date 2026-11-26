@@ -17,10 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -45,6 +41,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.AlertCircle
+import me.rerere.hugeicons.stroke.CheckmarkCircle02
+import me.rerere.hugeicons.stroke.TestTube01
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -181,7 +181,7 @@ fun ExperimentalNoticeBanner(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Science,
+                    imageVector = HugeIcons.TestTube01,
                     contentDescription = null,
                     tint = semantic.onWarningContainer,
                     modifier = Modifier.size(18.dp)
@@ -220,7 +220,7 @@ fun ReadinessChecklistItem(
     val semantic = PageRelayThemeExtras.semantic
     val statusBg = if (isReady) semantic.successContainer else semantic.warningContainer
     val statusTint = if (isReady) semantic.success else semantic.warning
-    val statusIcon = if (isReady) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline
+    val statusIcon = if (isReady) HugeIcons.CheckmarkCircle02 else HugeIcons.AlertCircle
 
     Surface(
         modifier = modifier.fillMaxWidth(),

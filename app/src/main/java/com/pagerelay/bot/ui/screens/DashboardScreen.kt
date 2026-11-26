@@ -16,18 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Call
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.FactCheck
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PersonSearch
-import androidx.compose.material.icons.rounded.PhoneInTalk
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.StopCircle
-import androidx.compose.material.icons.rounded.VerifiedUser
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -57,6 +45,18 @@ import com.pagerelay.bot.ui.components.formatShortTimestamp
 import com.pagerelay.bot.ui.theme.CrimsonStop
 import com.pagerelay.bot.ui.theme.MonoTimestampStyle
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Alert02
+import me.rerere.hugeicons.stroke.Call02
+import me.rerere.hugeicons.stroke.CallRinging02
+import me.rerere.hugeicons.stroke.CheckmarkCircle02
+import me.rerere.hugeicons.stroke.PauseCircle
+import me.rerere.hugeicons.stroke.Play
+import me.rerere.hugeicons.stroke.SecurityCheck
+import me.rerere.hugeicons.stroke.ShieldEnergy
+import me.rerere.hugeicons.stroke.StopCircle
+import me.rerere.hugeicons.stroke.TaskDone01
+import me.rerere.hugeicons.stroke.UserSearch01
 
 @Composable
 fun DashboardScreen(
@@ -90,10 +90,10 @@ fun DashboardScreen(
             val statusBadgeBg: Color
             val statusBadgeFg: Color
             val statusIcon = when {
-                settings.emergencyStopped -> Icons.Rounded.Warning
-                live.isCallInProgress -> Icons.Rounded.PhoneInTalk
-                settings.automationEnabled -> Icons.Rounded.Shield
-                else -> Icons.Rounded.Pause
+                settings.emergencyStopped -> HugeIcons.Alert02
+                live.isCallInProgress -> HugeIcons.CallRinging02
+                settings.automationEnabled -> HugeIcons.ShieldEnergy
+                else -> HugeIcons.PauseCircle
             }
 
             when {
@@ -225,7 +225,7 @@ fun DashboardScreen(
                                 shape = RoundedCornerShape(14.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.PlayArrow,
+                                    imageVector = HugeIcons.Play,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -247,7 +247,7 @@ fun DashboardScreen(
                             contentPadding = PaddingValues(vertical = 13.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.StopCircle,
+                                imageVector = HugeIcons.StopCircle,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -289,7 +289,7 @@ fun DashboardScreen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.PhoneInTalk,
+                                    imageVector = HugeIcons.CallRinging02,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -360,7 +360,7 @@ fun DashboardScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.PersonSearch,
+                                    imageVector = HugeIcons.UserSearch01,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
@@ -415,13 +415,13 @@ fun DashboardScreen(
             SectionCard(
                 title = "Quick Setup Checklist",
                 subtitle = "Complete these 4 steps once to arm PageRelay",
-                icon = Icons.Rounded.VerifiedUser,
+                icon = HugeIcons.SecurityCheck,
                 trailingHeader = {
                     StatusPill(
                         text = "$readyCount / 4 Ready",
                         containerColor = if (readyCount == 4) semantic.successContainer else semantic.warningContainer,
                         contentColor = if (readyCount == 4) semantic.onSuccessContainer else semantic.onWarningContainer,
-                        icon = if (readyCount == 4) Icons.Rounded.CheckCircle else null
+                        icon = if (readyCount == 4) HugeIcons.CheckmarkCircle02 else null
                     )
                 }
             ) {
@@ -485,7 +485,7 @@ fun DashboardScreen(
             SectionCard(
                 title = "Quick Messenger Verification",
                 subtitle = "Safely verify Messenger navigation before relying on live alerts",
-                icon = Icons.Rounded.Call
+                icon = HugeIcons.Call02
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -499,7 +499,7 @@ fun DashboardScreen(
                         contentPadding = PaddingValues(vertical = 12.dp, horizontal = 10.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.FactCheck,
+                            imageVector = HugeIcons.TaskDone01,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -518,7 +518,7 @@ fun DashboardScreen(
                         contentPadding = PaddingValues(vertical = 12.dp, horizontal = 10.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.PhoneInTalk,
+                            imageVector = HugeIcons.CallRinging02,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )

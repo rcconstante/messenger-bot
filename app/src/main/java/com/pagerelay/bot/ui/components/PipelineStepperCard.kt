@@ -15,13 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -41,6 +34,13 @@ import com.pagerelay.bot.domain.ExecutionFlowSpec
 import com.pagerelay.bot.domain.PipelineStepDescriptor
 import com.pagerelay.bot.domain.PipelineStepState
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Alert02
+import me.rerere.hugeicons.stroke.ArrowDown01
+import me.rerere.hugeicons.stroke.ArrowUp01
+import me.rerere.hugeicons.stroke.Cancel01
+import me.rerere.hugeicons.stroke.Flash
+import me.rerere.hugeicons.stroke.Tick02
 
 @Composable
 fun PipelineStepperCard(
@@ -59,7 +59,7 @@ fun PipelineStepperCard(
     SectionCard(
         title = "9-Step Execution Flow",
         subtitle = currentStepMessage,
-        icon = Icons.Rounded.Bolt,
+        icon = HugeIcons.Flash,
         modifier = modifier.animateContentSize(),
         trailingHeader = {
             Surface(
@@ -85,7 +85,7 @@ fun PipelineStepperCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Icon(
-                        imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        imageVector = if (expanded) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
                         contentDescription = if (expanded) "Collapse execution flow" else "Expand execution flow",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -190,19 +190,19 @@ private fun PipelineStepRow(
             ) {
                 when (state) {
                     PipelineStepState.COMPLETED -> Icon(
-                        imageVector = Icons.Rounded.Check,
+                        imageVector = HugeIcons.Tick02,
                         contentDescription = null,
                         tint = badgeFg,
                         modifier = Modifier.size(15.dp)
                     )
                     PipelineStepState.FAILED -> Icon(
-                        imageVector = Icons.Rounded.Close,
+                        imageVector = HugeIcons.Cancel01,
                         contentDescription = null,
                         tint = badgeFg,
                         modifier = Modifier.size(15.dp)
                     )
                     PipelineStepState.WARNING -> Icon(
-                        imageVector = Icons.Rounded.Warning,
+                        imageVector = HugeIcons.Alert02,
                         contentDescription = null,
                         tint = badgeFg,
                         modifier = Modifier.size(14.dp)

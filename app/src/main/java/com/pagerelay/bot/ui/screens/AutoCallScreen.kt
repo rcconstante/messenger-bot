@@ -15,19 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Computer
-import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.FactCheck
-import androidx.compose.material.icons.rounded.PersonSearch
-import androidx.compose.material.icons.rounded.PhoneAndroid
-import androidx.compose.material.icons.rounded.PhoneInTalk
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -56,6 +43,19 @@ import com.pagerelay.bot.ui.components.formatDuration
 import com.pagerelay.bot.ui.components.formatLogTimestamp
 import com.pagerelay.bot.ui.theme.MonoTimestampStyle
 import com.pagerelay.bot.ui.theme.PageRelayThemeExtras
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.CallRinging02
+import me.rerere.hugeicons.stroke.CheckmarkCircle02
+import me.rerere.hugeicons.stroke.Clock01
+import me.rerere.hugeicons.stroke.Computer
+import me.rerere.hugeicons.stroke.Delete02
+import me.rerere.hugeicons.stroke.PreferenceHorizontal
+import me.rerere.hugeicons.stroke.Refresh
+import me.rerere.hugeicons.stroke.SecurityCheck
+import me.rerere.hugeicons.stroke.SmartPhone01
+import me.rerere.hugeicons.stroke.TaskDone01
+import me.rerere.hugeicons.stroke.Timer02
+import me.rerere.hugeicons.stroke.UserSearch01
 import kotlin.math.roundToInt
 
 private val CooldownOptionsSeconds = listOf(30, 60, 90, 180, 300)
@@ -98,7 +98,7 @@ fun AutoCallScreen(
             SectionCard(
                 title = "Automatic Messenger Calling",
                 subtitle = "Alerts your secondary Messenger account after a new Page message",
-                icon = Icons.Rounded.PhoneInTalk,
+                icon = HugeIcons.CallRinging02,
                 trailingHeader = {
                     Switch(
                         checked = settings.autoCallEnabled,
@@ -115,7 +115,7 @@ fun AutoCallScreen(
                         text = "Messenger Audio Calls Only",
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        icon = Icons.Rounded.PhoneInTalk
+                        icon = HugeIcons.CallRinging02
                     )
                     StatusPill(
                         text = if (live.isMessengerInstalled) "Messenger Installed" else "Messenger Missing",
@@ -137,7 +137,7 @@ fun AutoCallScreen(
             SectionCard(
                 title = "Secondary Messenger Account",
                 subtitle = "Strict identity verification ensures calls only go to this account",
-                icon = Icons.Rounded.PersonSearch
+                icon = HugeIcons.UserSearch01
             ) {
                 SyncedOutlinedTextField(
                     externalValue = settings.secondaryAccountName,
@@ -229,7 +229,7 @@ fun AutoCallScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.VerifiedUser,
+                                        imageVector = HugeIcons.SecurityCheck,
                                         contentDescription = null,
                                         tint = semantic.onSuccessContainer,
                                         modifier = Modifier.size(20.dp)
@@ -272,7 +272,7 @@ fun AutoCallScreen(
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Rounded.Refresh,
+                                            imageVector = HugeIcons.Refresh,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -284,7 +284,7 @@ fun AutoCallScreen(
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Rounded.DeleteOutline,
+                                            imageVector = HugeIcons.Delete02,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -323,7 +323,7 @@ fun AutoCallScreen(
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.PersonSearch,
+                                        imageVector = HugeIcons.UserSearch01,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -351,7 +351,7 @@ fun AutoCallScreen(
             SectionCard(
                 title = "Call Duration & Safety Controls",
                 subtitle = "Prevent runaway calls, duplicate rings, and emulator timing misses",
-                icon = Icons.Rounded.Tune
+                icon = HugeIcons.PreferenceHorizontal
             ) {
                 // Max call duration slider (15s to 300s stepped by 15s)
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -365,7 +365,7 @@ fun AutoCallScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Timer,
+                                imageVector = HugeIcons.Timer02,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
@@ -444,7 +444,7 @@ fun AutoCallScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.Schedule,
+                            imageVector = HugeIcons.Clock01,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
@@ -472,7 +472,7 @@ fun AutoCallScreen(
                                 leadingIcon = if (selected) {
                                     {
                                         Icon(
-                                            imageVector = Icons.Rounded.CheckCircle,
+                                            imageVector = HugeIcons.CheckmarkCircle02,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -498,9 +498,9 @@ fun AutoCallScreen(
                         EmulatorProfile.entries.forEach { profile ->
                             val selected = settings.emulatorProfile == profile
                             val chipIcon = if (profile == EmulatorProfile.PHYSICAL_DEVICE) {
-                                Icons.Rounded.PhoneAndroid
+                                HugeIcons.SmartPhone01
                             } else {
-                                Icons.Rounded.Computer
+                                HugeIcons.Computer
                             }
                             FilterChip(
                                 selected = selected,
@@ -549,7 +549,7 @@ fun AutoCallScreen(
             SectionCard(
                 title = "Test Messenger Call",
                 subtitle = "Run a safe dry-run or live audio call test anytime",
-                icon = Icons.Rounded.FactCheck
+                icon = HugeIcons.TaskDone01
             ) {
                 Text(
                     text = "Dry-Run Verification launches Messenger, navigates to your secondary chat, verifies identity, " +
@@ -568,7 +568,7 @@ fun AutoCallScreen(
                         contentPadding = PaddingValues(vertical = 12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.FactCheck,
+                            imageVector = HugeIcons.TaskDone01,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -587,7 +587,7 @@ fun AutoCallScreen(
                         contentPadding = PaddingValues(vertical = 12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.PhoneInTalk,
+                            imageVector = HugeIcons.CallRinging02,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
