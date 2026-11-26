@@ -5,14 +5,19 @@ import com.pagerelay.bot.domain.GeminiTestResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.Dns
 import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 data class ConversationTurn(
@@ -50,10 +55,10 @@ class GeminiReplyClient(
                 .addPathSegment("v1beta")
                 .addPathSegment("models")
                 .addPathSegment("$normalizedModel:generateContent")
-                .addQueryParameter("key", trimmedKey)
                 .build()
 
             val payload = buildRequestPayload(
+                model = normalizedModel,
                 systemPrompt = systemPrompt,
                 senderName = senderName,
                 history = history,
@@ -64,6 +69,7 @@ class GeminiReplyClient(
                 .url(url)
                 .post(payload.toString().toRequestBody(JSON_MEDIA_TYPE))
                 .header("Accept", "application/json")
+                .header("x-goog-api-key", trimmedKey)
                 .build()
 
             httpClient.newCall(request).execute().use { response ->
@@ -92,6 +98,10 @@ class GeminiReplyClient(
             }
         } catch (ce: CancellationException) {
             throw ce
+        } catch (ste: SocketTimeoutException) {
+            Result.failure(
+                IOException("Gemini request timed out after 60s for $normalizedModel. Try gemini-3.8-flash or check emulator internet.", ste)
+            )
         } catch (t: Throwable) {
             Result.failure(
                 IllegalStateException(t.message ?: "Unexpected Gemini client error", t)
@@ -135,6 +145,7 @@ class GeminiReplyClient(
     }
 
     private fun buildRequestPayload(
+        model: String,
         systemPrompt: String,
         senderName: String,
         history: List<ConversationTurn>,
@@ -190,12 +201,16 @@ class GeminiReplyClient(
         }
 
         root.put("contents", contents)
-        root.put(
-            "generationConfig",
-            JSONObject()
-                .put("temperature", 0.4)
-                .put("maxOutputTokens", 180)
-        )
+        val generationConfig = JSONObject()
+            .put("temperature", 0.4)
+            .put("maxOutputTokens", 1024)
+        if (model.startsWith("gemini-3", ignoreCase = true)) {
+            generationConfig.put(
+                "thinkingConfig",
+                JSONObject().put("thinkingLevel", "low")
+            )
+        }
+        root.put("generationConfig", generationConfig)
         return root
     }
 
@@ -212,6 +227,7 @@ class GeminiReplyClient(
             val buffer = StringBuilder()
             for (i in 0 until parts.length()) {
                 val part = parts.optJSONObject(i) ?: continue
+                if (part.optBoolean("thought", false)) continue
                 val text = part.optString("text", "")
                 if (text.isNotBlank()) {
                     if (buffer.isNotEmpty()) buffer.append(' ')
@@ -257,10 +273,22 @@ class GeminiReplyClient(
         private const val DEFAULT_SYSTEM_PROMPT =
             "You are a polite, concise assistant replying on behalf of a Facebook Page."
 
+        private val ipv4FirstDns = object : Dns {
+            override fun lookup(hostname: String): List<InetAddress> {
+                val addresses = Dns.SYSTEM.lookup(hostname)
+                val v4 = addresses.filterIsInstance<Inet4Address>()
+                return if (v4.isNotEmpty()) v4 + addresses.filterNot { it is Inet4Address } else addresses
+            }
+        }
+
         private fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(25, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
+            .dns(ipv4FirstDns)
+            .protocols(listOf(Protocol.HTTP_1_1))
+            .retryOnConnectionFailure(true)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
+            .callTimeout(65, TimeUnit.SECONDS)
             .build()
     }
 }
