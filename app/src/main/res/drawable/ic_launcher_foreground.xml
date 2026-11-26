@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Chat bubble body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,27C37.1,27 25,38.1 25,51.8C25,58.8 28.2,65.1 33.4,69.6L31.2,79.8C30.9,81.1 32.1,82.1 33.3,81.5L43.6,76.3C46.3,77.1 49.1,77.5 52,77.5C66.9,77.5 79,66.4 79,52.7C79,38.1 66.9,27 52,27Z" />
+    <!-- Audio handset inside bubble -->
+    <path
+        android:fillColor="#1D4ED8"
+        android:pathData="M43.9,41.6C44.9,40.6 46.5,40.7 47.4,41.8L49.8,44.7C50.5,45.6 50.5,46.9 49.7,47.8L48.1,49.5C49.6,52.4 52,54.8 54.9,56.3L56.6,54.7C57.5,53.9 58.8,53.9 59.7,54.6L62.6,57C63.7,57.9 63.8,59.5 62.8,60.5L60.8,62.5C59.4,63.9 57.3,64.4 55.4,63.8C48.8,61.6 42.8,55.6 40.6,49C40,47.1 40.5,45 41.9,43.6L43.9,41.6Z" />
+    <!-- Relay audio wave arcs -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M67.5,31.5A14,14 0,0 1,78.5 42.5"
+        android:strokeColor="#5EEAD4"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.6" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M69.5,24.5A21,21 0,0 1,85.5 40.5"
+        android:strokeColor="#99F6E4"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.2" />
+</vector>

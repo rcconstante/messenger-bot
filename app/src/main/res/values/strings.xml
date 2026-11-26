@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PageRelay</string>
+    <string name="notification_listener_label">PageRelay Message Monitor</string>
+    <string name="accessibility_service_label">PageRelay Messenger Call Automation</string>
+    <string name="accessibility_service_description">Experimental UI automation used strictly to locate your saved secondary Facebook Messenger conversation, verify the recipient identity, and initiate or end a Messenger audio call after an automated Page reply. Never accesses Facebook credentials or performs cellular/SMS calls.</string>
+</resources>

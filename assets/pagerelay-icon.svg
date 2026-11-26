@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="55%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#0EA5E9" />
+    </linearGradient>
+    <radialGradient id="topGlow" cx="78%" cy="20%" r="55%">
+      <stop offset="0%" stop-color="#67E8F9" stop-opacity="0.34" />
+      <stop offset="60%" stop-color="#38BDF8" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="bubbleGrad" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E0F2FE" />
+    </linearGradient>
+    <linearGradient id="handsetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D4ED8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5EEAD4" />
+      <stop offset="100%" stop-color="#A7F3D0" />
+    </linearGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#0F172A" flood-opacity="0.28" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Icon Canvas -->
+  <rect x="0" y="0" width="1024" height="1024" rx="228" fill="url(#bgGrad)" />
+  <rect x="0" y="0" width="1024" height="1024" rx="228" fill="url(#topGlow)" />
+
+  <!-- Subtle geometric relay rings -->
+  <circle cx="496" cy="516" r="340" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="4" />
+  <circle cx="496" cy="516" r="418" fill="none" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="3" />
+
+  <!-- Main Message Bubble -->
+  <path
+    filter="url(#softShadow)"
+    fill="url(#bubbleGrad)"
+    d="M492,256 C348,256 232,362 232,494 C232,562 263,623 313,667 L291,765 C288,778 300,788 312,782 L412,731 C438,738 465,742 492,742 C636,742 752,636 752,504 C752,362 636,256 492,256 Z" />
+
+  <!-- Minimalist Audio Call Handset inside Bubble -->
+  <path
+    fill="url(#handsetGrad)"
+    d="M415,394 C425,384 441,385 450,396 L474,425 C481,434 481,447 473,456 L457,473 C472,502 496,526 525,541 L542,525 C551,517 564,517 573,524 L602,548 C613,557 614,573 604,583 L584,603 C570,617 549,622 530,616 C464,594 404,534 382,468 C376,449 381,428 395,414 L415,394 Z" />
+
+  <!-- Live Audio Relay Signal Arcs (Top Right) -->
+  <path
+    d="M650,290 A138,138 0 0 1 756,396"
+    fill="none"
+    stroke="url(#waveGrad)"
+    stroke-width="34"
+    stroke-linecap="round" />
+  <path
+    d="M668,214 A214,214 0 0 1 832,378"
+    fill="none"
+    stroke="#99F6E4"
+    stroke-opacity="0.82"
+    stroke-width="30"
+    stroke-linecap="round" />
+  <!-- Small live relay dot -->
+  <circle cx="622" cy="368" r="24" fill="#2DD4BF" />
+</svg>
