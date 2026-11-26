@@ -70,8 +70,13 @@ data class AppSettings(
         get() = savedRecipient.displayName.ifBlank { secondaryAccountName }.trim()
 
     companion object {
-        const val DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+        const val DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
         val SUPPORTED_GEMINI_MODELS = listOf(
+            "gemini-3.8-flash",
+            "gemini-3.6-flash",
+            "gemini-3.5-flash-lite"
+        )
+        val DEPRECATED_GEMINI_MODELS = setOf(
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
             "gemini-2.0-flash"

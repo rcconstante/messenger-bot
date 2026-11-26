@@ -293,6 +293,13 @@ fun RepliesAiScreen(
                             )
                         }
                     }
+                    SyncedOutlinedTextField(
+                        externalValue = settings.geminiModel,
+                        onValueChange = onUpdateGeminiModel,
+                        label = "Active Model ID (or custom)",
+                        placeholder = AppSettings.DEFAULT_GEMINI_MODEL,
+                        supportingText = "Tap a preset above or enter any Gemini model ID from Google AI Studio."
+                    )
                 }
 
                 SyncedOutlinedTextField(

@@ -95,6 +95,12 @@ class SettingsRepository(
             conversationSignature = prefs[Keys.SAVED_RECIPIENT_SIGNATURE] ?: defaults.savedRecipient.conversationSignature,
             capturedAtMillis = prefs[Keys.SAVED_RECIPIENT_CAPTURED_AT] ?: defaults.savedRecipient.capturedAtMillis
         )
+        val storedModel = (prefs[Keys.GEMINI_MODEL] ?: defaults.geminiModel).trim()
+        val effectiveModel = if (storedModel.isBlank() || storedModel in AppSettings.DEPRECATED_GEMINI_MODELS) {
+            AppSettings.DEFAULT_GEMINI_MODEL
+        } else {
+            storedModel
+        }
         return AppSettings(
             automationEnabled = prefs[Keys.AUTOMATION_ENABLED] ?: defaults.automationEnabled,
             emergencyStopped = prefs[Keys.EMERGENCY_STOPPED] ?: defaults.emergencyStopped,
@@ -102,7 +108,7 @@ class SettingsRepository(
             staticReplyMessage = prefs[Keys.STATIC_REPLY_MESSAGE] ?: defaults.staticReplyMessage,
             geminiEnabled = prefs[Keys.GEMINI_ENABLED] ?: defaults.geminiEnabled,
             geminiApiKey = prefs[Keys.GEMINI_API_KEY] ?: defaults.geminiApiKey,
-            geminiModel = prefs[Keys.GEMINI_MODEL] ?: defaults.geminiModel,
+            geminiModel = effectiveModel,
             geminiSystemPrompt = prefs[Keys.GEMINI_SYSTEM_PROMPT] ?: defaults.geminiSystemPrompt,
             autoCallEnabled = prefs[Keys.AUTO_CALL_ENABLED] ?: defaults.autoCallEnabled,
             secondaryAccountName = prefs[Keys.SECONDARY_ACCOUNT_NAME] ?: defaults.secondaryAccountName,
@@ -117,17 +123,25 @@ class SettingsRepository(
         )
     }
 
-    private fun sanitize(settings: AppSettings): AppSettings = settings.copy(
-        geminiModel = settings.geminiModel.trim().ifBlank { AppSettings.DEFAULT_GEMINI_MODEL },
-        maxCallDurationSeconds = settings.maxCallDurationSeconds.coerceIn(
-            MIN_CALL_DURATION_SECONDS,
-            MAX_CALL_DURATION_SECONDS
-        ),
-        duplicateCallCooldownSeconds = settings.duplicateCallCooldownSeconds.coerceIn(
-            MIN_COOLDOWN_SECONDS,
-            MAX_COOLDOWN_SECONDS
+    private fun sanitize(settings: AppSettings): AppSettings {
+        val rawModel = settings.geminiModel.trim()
+        val safeModel = if (rawModel.isBlank() || rawModel in AppSettings.DEPRECATED_GEMINI_MODELS) {
+            AppSettings.DEFAULT_GEMINI_MODEL
+        } else {
+            rawModel
+        }
+        return settings.copy(
+            geminiModel = safeModel,
+            maxCallDurationSeconds = settings.maxCallDurationSeconds.coerceIn(
+                MIN_CALL_DURATION_SECONDS,
+                MAX_CALL_DURATION_SECONDS
+            ),
+            duplicateCallCooldownSeconds = settings.duplicateCallCooldownSeconds.coerceIn(
+                MIN_COOLDOWN_SECONDS,
+                MAX_COOLDOWN_SECONDS
+            )
         )
-    )
+    }
 
     companion object {
         const val MIN_CALL_DURATION_SECONDS = 10
